@@ -76,8 +76,7 @@
             return btoa(JSON.stringify(obj));
         }
 
-        // --- LÓGICA DE EMPAREJAMIENTO Y DRAG & DROP (Misma que antes, por brevedad, omitida aquí) ---
-        // Debes copiar y pegar todas las funciones de lógica (generarEmparejamientosAleatorios, renderEmparejamientos, handleDragStart, handleDrop, etc.) aquí.
+        // --- LÓGICA DE EMPAREJAMIENTO Y DRAG & DROP ---
 
         function generarEmparejamientosAleatorios() {
             let receptores = [...nombres];
@@ -184,16 +183,18 @@
 
         /**
          * Genera la URL legible y con la Base64 de los emparejamientos.
+         * CORRECCIÓN: Genera una URL absoluta para funcionar al compartirla.
          */
         function generarUrlLegible(dador, b64Data) {
-            // Asume que este archivo se llama 'editor.html' y el archivo de secreto se llama 'secreto.html'
-            // **IMPORTANTE**: Necesitas el prefijo del servidor (ej: https://tusitio.com/)
+            // 1. Obtiene la URL base (ej: https://pablocoll12.github.io/ o con subcarpeta)
+            const pathSegments = window.location.pathname.split('/');
+            pathSegments.pop(); // Elimina 'intento.html'
             
-            // Si lo pruebas LOCALMENTE (en tu PC), el enlace debe empezar con la ruta del archivo secreto.html
-            // const baseUrl = window.location.href.split('editor.html')[0] + 'secreto.html'; 
-            
-            // Si lo subes a un servidor (opción recomendada), usa una ruta relativa:
-            const baseUrl = 'secreto.html';
+            // Reconstruye la ruta base, asegurando que termine en '/'
+            const basePath = pathSegments.join('/') + '/'; 
+
+            // Construye el enlace absoluto apuntando a secreto.html
+            const baseUrl = window.location.origin + basePath + 'secreto.html';
 
             // La URL ahora pasa la clave (dador) y el valor (datos codificados)
             return `${baseUrl}?dador=${dador}&data=${b64Data}`;
@@ -207,15 +208,13 @@
                 errorMessage.textContent = '¡Error! Primero debes generar las parejas.';
                 return;
             }
-
-            // Validación de auto-regalo (omito el bucle aquí por brevedad, asumiendo que ya se hizo)
             
             // 1. Codificar todos los emparejamientos en Base64
             const b64Data = objToBase64(emparejamientos);
 
             // 2. Limpiar y generar la lista de inputs copiables
             enlacesList.innerHTML = '';
-            errorMessage.textContent = '✅ Parejas aceptadas. ¡Sube estos enlaces al servidor y envíalos!';
+            errorMessage.textContent = '✅ Parejas aceptadas. ¡Copia y envía los enlaces individuales a cada participante!';
 
             Object.keys(emparejamientos).forEach(dador => {
                 const inputId = `enlace-${dador}`;
