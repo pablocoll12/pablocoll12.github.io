@@ -63,7 +63,8 @@
     </div>
 
     <script>
-        const nombres = ["Ana", "Carlos", "Eduardo (Ñe)", "Eduardo (abuelo)", "Margarita", "Beatriz", "Lorena", "Clara"];
+        // CAMBIO 2: Se eliminan los espacios en los nombres problemáticos
+        const nombres = ["Ana", "Carlos", "Eduardo(Ñe)", "Eduardo(abuelo)", "Margarita", "Beatriz", "Lorena", "Clara"];
         let emparejamientos = {};
         const dadoresColumn = document.getElementById('dadores-column');
         const receptoresColumn = document.getElementById('receptores-column');
@@ -183,7 +184,7 @@
 
         /**
          * Genera la URL legible y con la Base64 de los emparejamientos.
-         * CORRECCIÓN: Genera una URL absoluta para funcionar al compartirla fuera del sitio web.
+         * Mantiene la CORRECCIÓN para la URL absoluta.
          */
         function generarUrlLegible(dador, b64Data) {
             // 1. Obtiene la URL base (ej: https://pablocoll12.github.io/ o con subcarpeta)
@@ -251,4 +252,3 @@
     </script>
 </body>
 </html>
-
