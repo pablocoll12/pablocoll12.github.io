@@ -63,7 +63,7 @@
     </div>
 
     <script>
-        // CAMBIO 2: Se eliminan los espacios en los nombres problemáticos
+        // CORRECCIÓN 2: Nombres sin espacio en el array JavaScript
         const nombres = ["Ana", "Carlos", "Eduardo(Ñe)", "Eduardo(abuelo)", "Margarita", "Beatriz", "Lorena", "Clara"];
         let emparejamientos = {};
         const dadoresColumn = document.getElementById('dadores-column');
@@ -184,7 +184,7 @@
 
         /**
          * Genera la URL legible y con la Base64 de los emparejamientos.
-         * Mantiene la CORRECCIÓN para la URL absoluta.
+         * CORRECCIÓN: Genera una URL absoluta para funcionar al compartirla fuera del sitio web.
          */
         function generarUrlLegible(dador, b64Data) {
             // 1. Obtiene la URL base (ej: https://pablocoll12.github.io/ o con subcarpeta)
@@ -198,6 +198,7 @@
             const baseUrl = window.location.origin + basePath + 'secreto.html';
 
             // La URL ahora pasa la clave (dador) y el valor (datos codificados)
+            // Ya que el nombre no tiene espacios en 'nombres', se enviará limpio.
             return `${baseUrl}?dador=${dador}&data=${b64Data}`;
         }
 
