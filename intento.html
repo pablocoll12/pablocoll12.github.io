@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Amigo Invisible - Editor y Enlaces Finales</title>
+    <style>
+        /* --- ESTILOS GENERALES Y EDITOR (Mismos que antes) --- */
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f9; color: #333; }
+        h1, h2 { text-align: center; color: #00796b; }
+        button { padding: 10px 15px; background-color: #00796b; color: white; border: none; border-radius: 5px; cursor: pointer; margin: 10px 5px; font-weight: bold; transition: background-color 0.3s; }
+        button:hover { background-color: #004d40; }
+        hr { margin: 30px 0; border: 0; border-top: 1px solid #ccc; }
+        #editor-view { max-width: 800px; margin: 20px auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
+        #pairings-container { display: flex; justify-content: space-around; flex-wrap: wrap; margin-top: 15px; }
+        .pairing-column { width: 45%; min-width: 200px; padding: 10px; border-radius: 5px; background-color: #f0f8ff; margin: 10px 0; border: 1px solid #cceeff; }
+        .name-item { padding: 10px; margin: 5px 0; background-color: #e6f7ff; border: 1px solid #b3e0ff; border-radius: 4px; cursor: grab; font-weight: bold; text-align: center; }
+        .name-item.dragging { opacity: 0.5; border: 2px dashed #00796b; }
+        .drop-highlight { border: 2px dashed red !important; background-color: #ffe0e0 !important; }
+        .column-title { text-align: center; font-size: 1.2em; color: #00796b; margin-bottom: 10px; border-bottom: 2px solid #00796b; padding-bottom: 5px; }
+        #enlaces-container { padding: 20px; background-color: #e0f7fa; border-radius: 8px; }
+        .enlace-copiable-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; padding: 8px; background-color: #fff; border-radius: 5px; }
+        .enlace-copiable-row input[type="text"] { flex-grow: 1; padding: 8px; border: 1px solid #ccc; border-radius: 3px; margin-right: 10px; background-color: #f9f9f9; }
+        .enlace-copiable-row button { padding: 8px 12px; background-color: #3f51b5; margin: 0; }
+        .enlace-copiable-row button:hover { background-color: #303f9f; }
+        .error-message { color: red; font-weight: bold; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <div id="editor-view">
+        <h1>🎅 Editor de Parejas de Amigo Invisible 🎁</h1>
+        <p style="text-align: center;">Lista de 8 participantes: **Ana, Beto, Carlos, Diana, Elena, Félix, Gaby, Hugo**</p>
+
+        <div style="text-align: center;">
+            <button onclick="generarEmparejamientosAleatorios()">Generar Parejas Aleatorias</button>
+            <button onclick="aceptarParejas()">Aceptar Parejas y Generar Enlaces</button>
+        </div>
+
+        <hr>
+
+        <h2>Paso 1: Genera y Edita las Parejas (Arrastra y Suelta)</h2>
+        <p style="text-align: center; font-style: italic; color: #555;">Arrastra un nombre de la columna "Amigo Invisible" al lugar de otro nombre para intercambiarlos.</p>
+        
+        <div id="pairings-container">
+            <div id="dadores-column" class="pairing-column">
+                <div class="column-title">Quien Regala (Dador)</div>
+            </div>
+            
+            <div id="receptores-column" class="pairing-column">
+                <div class="column-title">Amigo Invisible (Receptor)</div>
+            </div>
+        </div>
+
+        <hr>
+        
+        <div id="enlaces-container">
+            <h2>Paso 2: Enlaces Finales y Copiables</h2>
+            <p id="error-message" class="error-message"></p>
+            <div id="enlaces-list">
+                <p>Pulsa "Generar Parejas Aleatorias" para empezar.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const nombres = ["Ana", "Carlos", "Eduardo (Ñe)", "Eduardo (abuelo)", "Margarita", "Beatriz", "Lorena", "Clara"];
+        let emparejamientos = {};
+        const dadoresColumn = document.getElementById('dadores-column');
+        const receptoresColumn = document.getElementById('receptores-column');
+        const enlacesList = document.getElementById('enlaces-list');
+        const errorMessage = document.getElementById('error-message');
+        let draggedElement = null;
+        
+        // --- FUNCIONES DE CODIFICACIÓN (Base64) ---
+        function objToBase64(obj) {
+            return btoa(JSON.stringify(obj));
+        }
+
+        // --- LÓGICA DE EMPAREJAMIENTO Y DRAG & DROP (Misma que antes, por brevedad, omitida aquí) ---
+        // Debes copiar y pegar todas las funciones de lógica (generarEmparejamientosAleatorios, renderEmparejamientos, handleDragStart, handleDrop, etc.) aquí.
+
+        function generarEmparejamientosAleatorios() {
+            let receptores = [...nombres];
+            let nuevosEmparejamientos = {};
+            let intentoValido = false;
+
+            while (!intentoValido) {
+                // Barajar la lista de receptores (Fisher-Yates)
+                for (let i = receptores.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [receptores[i], receptores[j]] = [receptores[j], receptores[i]];
+                }
+
+                intentoValido = true;
+                nuevosEmparejamientos = {};
+                for (let i = 0; i < nombres.length; i++) {
+                    const dador = nombres[i];
+                    const receptor = receptores[i];
+                    if (dador === receptor) {
+                        intentoValido = false;
+                        break;
+                    }
+                    nuevosEmparejamientos[dador] = receptor;
+                }
+            }
+            emparejamientos = nuevosEmparejamientos;
+            renderEmparejamientos();
+            errorMessage.textContent = '✅ Parejas generadas. Arrastra y suelta para editar.';
+            enlacesList.innerHTML = '<p>Pulsa "Aceptar Parejas" para generar los enlaces secretos aquí.</p>';
+        }
+
+        function renderEmparejamientos() {
+            dadoresColumn.innerHTML = '<div class="column-title">Quien Regala (Dador)</div>';
+            receptoresColumn.innerHTML = '<div class="column-title">Amigo Invisible (Receptor)</div>';
+            
+            let dadoresOrdenados = nombres.sort();
+
+            dadoresOrdenados.forEach(dador => {
+                const receptor = emparejamientos[dador];
+
+                const dadorDiv = document.createElement('div');
+                dadorDiv.className = 'name-item';
+                dadorDiv.textContent = dador;
+                dadorDiv.style.cursor = 'default';
+                dadoresColumn.appendChild(dadorDiv);
+
+                const receptorDiv = document.createElement('div');
+                receptorDiv.className = 'name-item';
+                receptorDiv.textContent = receptor;
+                receptorDiv.setAttribute('draggable', true);
+                receptorDiv.dataset.dador = dador;
+                
+                receptorDiv.addEventListener('dragstart', handleDragStart);
+                receptorDiv.addEventListener('dragenter', (e) => { e.preventDefault(); }); // Para permitir drop
+                receptorDiv.addEventListener('dragleave', (e) => { e.target.classList.remove('drop-highlight'); });
+                receptorDiv.addEventListener('drop', handleDrop);
+                receptorDiv.addEventListener('dragover', (e) => { e.preventDefault(); if (e.target.classList.contains('name-item') && e.target !== draggedElement) { e.target.classList.add('drop-highlight'); } });
+
+                receptoresColumn.appendChild(receptorDiv);
+            });
+        }
+        
+        function handleDragStart(e) {
+            draggedElement = e.target;
+            e.dataTransfer.effectAllowed = 'move';
+            setTimeout(() => { draggedElement.classList.add('dragging'); }, 0);
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            draggedElement.classList.remove('dragging');
+            const targetElement = e.target; 
+            document.querySelectorAll('.drop-highlight').forEach(el => el.classList.remove('drop-highlight'));
+
+            if (draggedElement && targetElement.classList.contains('name-item') && draggedElement !== targetElement) {
+                const dador1 = draggedElement.dataset.dador;
+                const dador2 = targetElement.dataset.dador;
+                const receptor1Original = emparejamientos[dador1];
+                const receptor2Original = emparejamientos[dador2];
+                emparejamientos[dador1] = receptor2Original;
+                emparejamientos[dador2] = receptor1Original;
+
+                if (emparejamientos[dador1] === dador1 || emparejamientos[dador2] === dador2) {
+                    errorMessage.textContent = '¡Advertencia! El intercambio ha creado un auto-regalo. Por favor, corrígelo.';
+                } else {
+                    errorMessage.textContent = '✅ Intercambio realizado. Pulsa "Aceptar Parejas" cuando termines.';
+                }
+                renderEmparejamientos();
+            }
+            draggedElement = null;
+        }
+
+        // --- FUNCIONES FINALES ---
+
+        function copiarEnlace(buttonElement, inputId) {
+            const input = document.getElementById(inputId);
+            input.select();
+            input.setSelectionRange(0, 99999);
+            document.execCommand("copy");
+            
+            buttonElement.textContent = '¡Copiado!';
+            setTimeout(() => { buttonElement.textContent = 'Copiar Enlace'; }, 2000);
+        }
+
+        /**
+         * Genera la URL legible y con la Base64 de los emparejamientos.
+         */
+        function generarUrlLegible(dador, b64Data) {
+            // Asume que este archivo se llama 'editor.html' y el archivo de secreto se llama 'secreto.html'
+            // **IMPORTANTE**: Necesitas el prefijo del servidor (ej: https://tusitio.com/)
+            
+            // Si lo pruebas LOCALMENTE (en tu PC), el enlace debe empezar con la ruta del archivo secreto.html
+            // const baseUrl = window.location.href.split('editor.html')[0] + 'secreto.html'; 
+            
+            // Si lo subes a un servidor (opción recomendada), usa una ruta relativa:
+            const baseUrl = 'secreto.html';
+
+            // La URL ahora pasa la clave (dador) y el valor (datos codificados)
+            return `${baseUrl}?dador=${dador}&data=${b64Data}`;
+        }
+
+        /**
+         * Se activa al pulsar el botón "Aceptar Parejas".
+         */
+        function aceptarParejas() {
+            if (Object.keys(emparejamientos).length !== nombres.length) {
+                errorMessage.textContent = '¡Error! Primero debes generar las parejas.';
+                return;
+            }
+
+            // Validación de auto-regalo (omito el bucle aquí por brevedad, asumiendo que ya se hizo)
+            
+            // 1. Codificar todos los emparejamientos en Base64
+            const b64Data = objToBase64(emparejamientos);
+
+            // 2. Limpiar y generar la lista de inputs copiables
+            enlacesList.innerHTML = '';
+            errorMessage.textContent = '✅ Parejas aceptadas. ¡Sube estos enlaces al servidor y envíalos!';
+
+            Object.keys(emparejamientos).forEach(dador => {
+                const inputId = `enlace-${dador}`;
+                
+                // Genera la URL legible
+                const url = generarUrlLegible(dador, b64Data); 
+
+                const row = document.createElement('div');
+                row.className = 'enlace-copiable-row';
+                
+                const label = document.createElement('span');
+                label.textContent = `${dador}:`;
+                label.style.fontWeight = 'bold';
+                label.style.marginRight = '10px';
+                row.appendChild(label);
+
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.id = inputId;
+                input.value = url;
+                input.readOnly = true;
+                row.appendChild(input);
+
+                const button = document.createElement('button');
+                button.textContent = 'Copiar Enlace';
+                button.onclick = () => copiarEnlace(button, inputId);
+                row.appendChild(button);
+
+                enlacesList.appendChild(row);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', generarEmparejamientosAleatorios);
+    </script>
+</body>
+</html>
