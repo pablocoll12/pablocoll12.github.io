@@ -23,13 +23,26 @@
         .enlace-copiable-row button { padding: 8px 12px; background-color: #3f51b5; margin: 0; }
         .enlace-copiable-row button:hover { background-color: #303f9f; }
         .error-message { color: red; font-weight: bold; text-align: center; }
+        /* Nuevo estilo para el área de texto de nombres */
+        #nombres-input { width: 98%; min-height: 80px; padding: 10px; margin-top: 10px; border: 1px solid #ccc; border-radius: 4px; resize: vertical; }
+        #nombres-seccion { text-align: center; margin-bottom: 20px; }
     </style>
 </head>
 <body>
 
     <div id="editor-view">
         <h1>🎅 Editor de Parejas de Amigo Invisible 🎁</h1>
-        <p style="text-align: center;">Lista de 8 participantes: **Ana, Carlos, Eduardo(Ñe), Eduardo(abuelo), Margarita, Beatriz, Lorena, Clara**</p>
+
+        <div id="nombres-seccion">
+            <h2>Paso 0: Introduce los Nombres</h2>
+            <p>Escribe los nombres de los participantes, separados por **comas**, **puntos y comas** o en **líneas separadas**.</p>
+            <textarea id="nombres-input" placeholder="Ejemplo: Ana, Carlos, Beatriz, Eduardo, Margarita, etc.">Ana, Carlos, Eduardo(Ñe), Eduardo(abuelo), Margarita, Beatriz, Lorena, Clara</textarea>
+            <button onclick="cargarNombres()">Cargar Participantes</button>
+        </div>
+
+        <hr>
+
+        <p id="lista-participantes" style="text-align: center; font-weight: bold;">Lista de 8 participantes: Ana, Carlos, Eduardo(Ñe), Eduardo(abuelo), Margarita, Beatriz, Lorena, Clara</p>
 
         <div style="text-align: center;">
             <button onclick="generarEmparejamientosAleatorios()">Generar Parejas Aleatorias</button>
@@ -57,21 +70,54 @@
             <h2>Paso 2: Enlaces Finales y Copiables</h2>
             <p id="error-message" class="error-message"></p>
             <div id="enlaces-list">
-                <p>Pulsa "Generar Parejas Aleatorias" para empezar.</p>
+                <p>Carga los participantes y pulsa "Generar Parejas Aleatorias" para empezar.</p>
             </div>
         </div>
     </div>
 
     <script>
-        // CORRECCIÓN 2: Nombres sin espacio en el array JavaScript
-        const nombres = ["Ana", "Carlos", "Eduardo(Ñe)", "Eduardo(abuelo)", "Margarita", "Beatriz", "Lorena", "Clara"];
+        // La variable `nombres` ahora se inicializa vacía
+        let nombres = [];
         let emparejamientos = {};
         const dadoresColumn = document.getElementById('dadores-column');
         const receptoresColumn = document.getElementById('receptores-column');
         const enlacesList = document.getElementById('enlaces-list');
         const errorMessage = document.getElementById('error-message');
+        const nombresInput = document.getElementById('nombres-input');
+        const listaParticipantesEl = document.getElementById('lista-participantes');
         let draggedElement = null;
         
+        // --- FUNCIONES DE MANEJO DE NOMBRES ---
+
+        function cargarNombres() {
+            const rawText = nombresInput.value.trim();
+            if (!rawText) {
+                alert("Por favor, introduce los nombres de los participantes.");
+                return;
+            }
+
+            // Divide el texto por comas, puntos y comas o saltos de línea
+            let nombresLimpios = rawText.split(/[,\n;]/)
+                                        .map(name => name.trim()) // Elimina espacios en blanco
+                                        .filter(name => name.length > 0) // Elimina entradas vacías
+                                        .filter((name, index, self) => self.indexOf(name) === index); // Elimina duplicados
+            
+            if (nombresLimpios.length < 2) {
+                alert("Necesitas al menos 2 participantes únicos. Verifica la lista.");
+                return;
+            }
+
+            nombres = nombresLimpios;
+            listaParticipantesEl.textContent = `Lista de ${nombres.length} participantes: ${nombres.join(', ')}`;
+            
+            // Limpia las parejas y la vista
+            emparejamientos = {};
+            dadoresColumn.innerHTML = '<div class="column-title">Quien Regala (Dador)</div>';
+            receptoresColumn.innerHTML = '<div class="column-title">Amigo Invisible (Receptor)</div>';
+            enlacesList.innerHTML = '<p>Pulsa "Generar Parejas Aleatorias" para empezar.</p>';
+            errorMessage.textContent = '✅ Nombres cargados. Pulsa "Generar Parejas Aleatorias" para continuar.';
+        }
+
         // --- FUNCIONES DE CODIFICACIÓN (Base64) ---
         function objToBase64(obj) {
             return btoa(JSON.stringify(obj));
@@ -80,6 +126,11 @@
         // --- LÓGICA DE EMPAREJAMIENTO Y DRAG & DROP ---
 
         function generarEmparejamientosAleatorios() {
+            if (nombres.length === 0) {
+                errorMessage.textContent = '¡Error! Primero debes cargar los nombres de los participantes.';
+                return;
+            }
+            
             let receptores = [...nombres];
             let nuevosEmparejamientos = {};
             let intentoValido = false;
@@ -113,7 +164,8 @@
             dadoresColumn.innerHTML = '<div class="column-title">Quien Regala (Dador)</div>';
             receptoresColumn.innerHTML = '<div class="column-title">Amigo Invisible (Receptor)</div>';
             
-            let dadoresOrdenados = nombres.sort();
+            // Usamos una copia ordenada de los nombres para la columna de Dadores
+            let dadoresOrdenados = [...nombres].sort();
 
             dadoresOrdenados.forEach(dador => {
                 const receptor = emparejamientos[dador];
@@ -184,12 +236,11 @@
 
         /**
          * Genera la URL legible y con la Base64 de los emparejamientos.
-         * CORRECCIÓN: Genera una URL absoluta para funcionar al compartirla fuera del sitio web.
          */
         function generarUrlLegible(dador, b64Data) {
-            // 1. Obtiene la URL base (ej: https://pablocoll12.github.io/ o con subcarpeta)
+            // Obtiene la ruta base del archivo actual
             const pathSegments = window.location.pathname.split('/');
-            pathSegments.pop(); // Elimina 'intento.html'
+            pathSegments.pop(); // Elimina el nombre del archivo actual
             
             // Reconstruye la ruta base, asegurando que termine en '/'
             const basePath = pathSegments.join('/') + '/'; 
@@ -198,16 +249,15 @@
             const baseUrl = window.location.origin + basePath + 'secreto.html';
 
             // La URL ahora pasa la clave (dador) y el valor (datos codificados)
-            // Ya que el nombre no tiene espacios en 'nombres', se enviará limpio.
-            return `${baseUrl}?dador=${dador}&data=${b64Data}`;
+            return `${baseUrl}?dador=${encodeURIComponent(dador)}&data=${b64Data}`;
         }
 
         /**
          * Se activa al pulsar el botón "Aceptar Parejas".
          */
         function aceptarParejas() {
-            if (Object.keys(emparejamientos).length !== nombres.length) {
-                errorMessage.textContent = '¡Error! Primero debes generar las parejas.';
+            if (Object.keys(emparejamientos).length !== nombres.length || nombres.length === 0) {
+                errorMessage.textContent = '¡Error! Primero debes cargar los nombres y generar las parejas.';
                 return;
             }
             
@@ -219,7 +269,7 @@
             errorMessage.textContent = '✅ Parejas aceptadas. ¡Copia y envía los enlaces individuales a cada participante!';
 
             Object.keys(emparejamientos).forEach(dador => {
-                const inputId = `enlace-${dador}`;
+                const inputId = `enlace-${dador.replace(/[^a-zA-Z0-9]/g, '')}`; // ID limpio para evitar problemas
                 
                 // Genera la URL legible
                 const url = generarUrlLegible(dador, b64Data); 
@@ -249,7 +299,8 @@
             });
         }
 
-        document.addEventListener('DOMContentLoaded', generarEmparejamientosAleatorios);
+        // Carga los nombres predefinidos al inicio
+        document.addEventListener('DOMContentLoaded', cargarNombres);
     </script>
 </body>
 </html>
