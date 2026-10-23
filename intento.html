@@ -2,9 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Amigo Invisible - Editor y Enlaces Finales</title>
+    <title>Editor de Amigo Invisible - Generador de Enlaces</title>
     <style>
-        /* --- ESTILOS GENERALES Y EDITOR (Mismos que antes) --- */
         body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f9; color: #333; }
         h1, h2 { text-align: center; color: #00796b; }
         button { padding: 10px 15px; background-color: #00796b; color: white; border: none; border-radius: 5px; cursor: pointer; margin: 10px 5px; font-weight: bold; transition: background-color 0.3s; }
@@ -23,7 +22,6 @@
         .enlace-copiable-row button { padding: 8px 12px; background-color: #3f51b5; margin: 0; }
         .enlace-copiable-row button:hover { background-color: #303f9f; }
         .error-message { color: red; font-weight: bold; text-align: center; }
-        /* Nuevo estilo para el área de texto de nombres */
         #nombres-input { width: 98%; min-height: 80px; padding: 10px; margin-top: 10px; border: 1px solid #ccc; border-radius: 4px; resize: vertical; }
         #nombres-seccion { text-align: center; margin-bottom: 20px; }
     </style>
@@ -35,14 +33,14 @@
 
         <div id="nombres-seccion">
             <h2>Paso 0: Introduce los Nombres</h2>
-            <p>Escribe los nombres de los participantes, separados por **comas**, **puntos y comas** o en **líneas separadas**.</p>
-            <textarea id="nombres-input" placeholder="Ejemplo: Ana, Carlos, Beatriz, Eduardo, Margarita, etc.">Ana, Carlos, Eduardo(Ñe), Eduardo(abuelo), Margarita, Beatriz, Lorena, Clara</textarea>
+            <p>Escribe los nombres de los participantes, separados por comas, puntos y comas o en líneas separadas.</p>
+            <textarea id="nombres-input" placeholder="Ejemplo: Ana, Carlos, Beatriz...">Ana, Carlos, Eduardo(Ñe), Eduardo(abuelo), Margarita, Beatriz, Lorena, Clara</textarea>
             <button onclick="cargarNombres()">Cargar Participantes</button>
         </div>
 
         <hr>
 
-        <p id="lista-participantes" style="text-align: center; font-weight: bold;">Lista de 8 participantes: Ana, Carlos, Eduardo(Ñe), Eduardo(abuelo), Margarita, Beatriz, Lorena, Clara</p>
+        <p id="lista-participantes" style="text-align: center; font-weight: bold;"></p>
 
         <div style="text-align: center;">
             <button onclick="generarEmparejamientosAleatorios()">Generar Parejas Aleatorias</button>
@@ -76,7 +74,6 @@
     </div>
 
     <script>
-        // La variable `nombres` ahora se inicializa vacía
         let nombres = [];
         let emparejamientos = {};
         const dadoresColumn = document.getElementById('dadores-column');
@@ -87,8 +84,6 @@
         const listaParticipantesEl = document.getElementById('lista-participantes');
         let draggedElement = null;
         
-        // --- FUNCIONES DE MANEJO DE NOMBRES ---
-
         function cargarNombres() {
             const rawText = nombresInput.value.trim();
             if (!rawText) {
@@ -96,11 +91,10 @@
                 return;
             }
 
-            // Divide el texto por comas, puntos y comas o saltos de línea
             let nombresLimpios = rawText.split(/[,\n;]/)
-                                        .map(name => name.trim()) // Elimina espacios en blanco
-                                        .filter(name => name.length > 0) // Elimina entradas vacías
-                                        .filter((name, index, self) => self.indexOf(name) === index); // Elimina duplicados
+                                        .map(name => name.trim())
+                                        .filter(name => name.length > 0)
+                                        .filter((name, index, self) => self.indexOf(name) === index);
             
             if (nombresLimpios.length < 2) {
                 alert("Necesitas al menos 2 participantes únicos. Verifica la lista.");
@@ -110,7 +104,6 @@
             nombres = nombresLimpios;
             listaParticipantesEl.textContent = `Lista de ${nombres.length} participantes: ${nombres.join(', ')}`;
             
-            // Limpia las parejas y la vista
             emparejamientos = {};
             dadoresColumn.innerHTML = '<div class="column-title">Quien Regala (Dador)</div>';
             receptoresColumn.innerHTML = '<div class="column-title">Amigo Invisible (Receptor)</div>';
@@ -118,12 +111,16 @@
             errorMessage.textContent = '✅ Nombres cargados. Pulsa "Generar Parejas Aleatorias" para continuar.';
         }
 
-        // --- FUNCIONES DE CODIFICACIÓN (Base64) ---
-        function objToBase64(obj) {
-            return btoa(JSON.stringify(obj));
+        // Codificación segura UTF-8 a Base64 con soporte para Ñ, tildes y símbolos
+        function objToBase64Utf8(obj) {
+            const jsonString = JSON.stringify(obj);
+            const bytes = new TextEncoder().encode(jsonString);
+            let binaryString = '';
+            for (let i = 0; i < bytes.length; i++) {
+                binaryString += String.fromCharCode(bytes[i]);
+            }
+            return btoa(binaryString);
         }
-
-        // --- LÓGICA DE EMPAREJAMIENTO Y DRAG & DROP ---
 
         function generarEmparejamientosAleatorios() {
             if (nombres.length === 0) {
@@ -136,7 +133,6 @@
             let intentoValido = false;
 
             while (!intentoValido) {
-                // Barajar la lista de receptores (Fisher-Yates)
                 for (let i = receptores.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
                     [receptores[i], receptores[j]] = [receptores[j], receptores[i]];
@@ -164,7 +160,6 @@
             dadoresColumn.innerHTML = '<div class="column-title">Quien Regala (Dador)</div>';
             receptoresColumn.innerHTML = '<div class="column-title">Amigo Invisible (Receptor)</div>';
             
-            // Usamos una copia ordenada de los nombres para la columna de Dadores
             let dadoresOrdenados = [...nombres].sort();
 
             dadoresOrdenados.forEach(dador => {
@@ -183,7 +178,7 @@
                 receptorDiv.dataset.dador = dador;
                 
                 receptorDiv.addEventListener('dragstart', handleDragStart);
-                receptorDiv.addEventListener('dragenter', (e) => { e.preventDefault(); }); // Para permitir drop
+                receptorDiv.addEventListener('dragenter', (e) => { e.preventDefault(); });
                 receptorDiv.addEventListener('dragleave', (e) => { e.target.classList.remove('drop-highlight'); });
                 receptorDiv.addEventListener('drop', handleDrop);
                 receptorDiv.addEventListener('dragover', (e) => { e.preventDefault(); if (e.target.classList.contains('name-item') && e.target !== draggedElement) { e.target.classList.add('drop-highlight'); } });
@@ -222,57 +217,32 @@
             draggedElement = null;
         }
 
-        // --- FUNCIONES FINALES ---
-
         function copiarEnlace(buttonElement, inputId) {
             const input = document.getElementById(inputId);
             input.select();
             input.setSelectionRange(0, 99999);
-            document.execCommand("copy");
-            
-            buttonElement.textContent = '¡Copiado!';
-            setTimeout(() => { buttonElement.textContent = 'Copiar Enlace'; }, 2000);
+            navigator.clipboard.writeText(input.value).then(() => {
+                buttonElement.textContent = '¡Copiado!';
+                setTimeout(() => { buttonElement.textContent = 'Copiar Enlace'; }, 2000);
+            });
         }
 
-        /**
-         * Genera la URL legible y con la Base64 de los emparejamientos.
-         */
-        function generarUrlLegible(dador, b64Data) {
-            // Obtiene la ruta base del archivo actual
-            const pathSegments = window.location.pathname.split('/');
-            pathSegments.pop(); // Elimina el nombre del archivo actual
-            
-            // Reconstruye la ruta base, asegurando que termine en '/'
-            const basePath = pathSegments.join('/') + '/'; 
-
-            // Construye el enlace absoluto apuntando a secreto.html
-            const baseUrl = window.location.origin + basePath + 'secreto.html';
-
-            // La URL ahora pasa la clave (dador) y el valor (datos codificados)
-            return `${baseUrl}?dador=${encodeURIComponent(dador)}&data=${b64Data}`;
-        }
-
-        /**
-         * Se activa al pulsar el botón "Aceptar Parejas".
-         */
         function aceptarParejas() {
             if (Object.keys(emparejamientos).length !== nombres.length || nombres.length === 0) {
                 errorMessage.textContent = '¡Error! Primero debes cargar los nombres y generar las parejas.';
                 return;
             }
             
-            // 1. Codificar todos los emparejamientos en Base64
-            const b64Data = objToBase64(emparejamientos);
-
-            // 2. Limpiar y generar la lista de inputs copiables
+            // Los enlaces apuntarán a tu secreto.html en GitHub
+            const baseUrl = "https://pablocoll12.github.io/secreto.html";
+            const b64Data = objToBase64Utf8(emparejamientos);
+            
             enlacesList.innerHTML = '';
             errorMessage.textContent = '✅ Parejas aceptadas. ¡Copia y envía los enlaces individuales a cada participante!';
 
             Object.keys(emparejamientos).forEach(dador => {
-                const inputId = `enlace-${dador.replace(/[^a-zA-Z0-9]/g, '')}`; // ID limpio para evitar problemas
-                
-                // Genera la URL legible
-                const url = generarUrlLegible(dador, b64Data); 
+                const inputId = `enlace-${dador.replace(/[^a-zA-Z0-9]/g, '')}`;
+                const url = `${baseUrl}?dador=${encodeURIComponent(dador)}&data=${encodeURIComponent(b64Data)}`;
 
                 const row = document.createElement('div');
                 row.className = 'enlace-copiable-row';
@@ -292,14 +262,13 @@
 
                 const button = document.createElement('button');
                 button.textContent = 'Copiar Enlace';
-                button.onclick = () => copiarEnlace(button, inputId);
+                button.onclick = function() { copiarEnlace(button, inputId); };
                 row.appendChild(button);
 
                 enlacesList.appendChild(row);
             });
         }
 
-        // Carga los nombres predefinidos al inicio
         document.addEventListener('DOMContentLoaded', cargarNombres);
     </script>
 </body>
